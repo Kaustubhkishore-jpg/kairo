@@ -1,0 +1,32 @@
+# Node
+node_modules/
+dist/
+
+# Python
+venv/
+__pycache__/
+*.pyc
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.vscode/
+.idea/
+
+# Operating System
+.DS_Store
+Thumbs.db
+# Logs
+*.log
+
+# Python cache
+.pytest_cache/
+
+# Environment
+.env.*
+!.env.example
+
+# Vite
+vite.svg

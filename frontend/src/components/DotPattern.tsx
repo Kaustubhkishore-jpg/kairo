@@ -1,0 +1,40 @@
+export default function DotPattern() {
+  return (
+    <div
+      className="
+        absolute
+        left-6
+        top-28
+        sm:left-12
+        sm:top-36
+        lg:left-20
+        lg:top-40
+        opacity-20
+        md:opacity-40
+        pointer-events-none
+        select-none
+      "
+    >
+      <div
+        className="
+          grid
+          grid-cols-8
+          gap-2
+          sm:gap-3
+        "
+      >
+        {Array.from({ length: 64 }).map((_, index) => (
+          <div
+            key={index}
+            className="
+              w-1
+              h-1
+              rounded-full
+              bg-white
+            "
+          />
+        ))}
+      </div>
+    </div>
+  );
+}
