@@ -66,21 +66,21 @@ function Navbar() {
               Features
             </Link>
 
-            <a
-              href="/features#how-it-works"
+            <Link
+              to="/features#how-it-works"
               onClick={() => setIsOpen(false)}
               className="text-slate-600 hover:text-indigo-600 transition"
             >
               How it Works
-            </a>
+            </Link>
 
-            <a
-              href="/features#faq"
+            <Link
+              to="/features#faq"
               onClick={() => setIsOpen(false)}
               className="text-slate-600 hover:text-indigo-600 transition"
             >
               FAQ
-            </a>
+            </Link>
 
            
             
