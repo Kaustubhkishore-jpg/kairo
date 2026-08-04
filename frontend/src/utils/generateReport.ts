@@ -1,69 +1,301 @@
 import jsPDF from "jspdf";
 import autoTable from "jspdf-autotable";
 
-export function generateReport(analysis: any) {
-  const doc = new jsPDF();
+export async function generateReport(analysis: any) {
+  const doc = new jsPDF("p", "mm", "a4");
 
-  // Title
-  doc.setFontSize(22);
-  doc.setTextColor(79, 70, 229);
-  doc.text("KAIRO", 14, 20);
+  const pageWidth = doc.internal.pageSize.getWidth();
+  const pageHeight = doc.internal.pageSize.getHeight();
+
+  let y = 20;
+
+  // -------------------------
+  // Load Logo
+  // -------------------------
+
+  try {
+    const logo = new Image();
+    logo.src = "/kairo-logo.png";
+
+    await new Promise((resolve) => {
+      logo.onload = resolve;
+    });
+
+    doc.addImage(
+      logo,
+      "PNG",
+      pageWidth / 2 - 18,
+      12,
+      36,
+      36
+    );
+  } catch {
+    console.log("Logo not found.");
+  }
+
+  y = 58;
+
+  // -------------------------
+  // Header
+  // -------------------------
 
   doc.setFontSize(16);
-  doc.setTextColor(0, 0, 0);
-  doc.text("AI Resume Analysis Report", 14, 30);
+  doc.setTextColor(30);
 
-  // Date
-  doc.setFontSize(10);
-  doc.setTextColor(120);
   doc.text(
-    `Generated: ${new Date().toLocaleDateString()}`,
-    14,
-    38
+    "AI Resume Analysis Report",
+    pageWidth / 2,
+    y,
+    {
+      align: "center",
+    }
   );
 
-  // Scores
+  y += 8;
+
+  doc.setFontSize(11);
+  doc.setTextColor(120);
+
+  doc.text(
+    "Professional Resume Intelligence",
+    pageWidth / 2,
+    y,
+    {
+      align: "center",
+    }
+  );
+
+  y += 10;
+
+  doc.text(
+    `Generated on ${new Date().toLocaleDateString()}`,
+    pageWidth / 2,
+    y,
+    {
+      align: "center",
+    }
+  );
+
+  y += 12;
+
+  doc.setDrawColor(220);
+  doc.line(15, y, pageWidth - 15, y);
+
+  y += 10;
+
+  // -------------------------
+  // Executive Summary
+  // -------------------------
+
+  doc.setFontSize(18);
+  doc.setTextColor(79, 70, 229);
+
+  doc.text("Executive Summary", 15, y);
+
+  y += 6;
+
   autoTable(doc, {
-    startY: 45,
+    startY: y,
+
+    theme: "grid",
+
     head: [["Metric", "Score"]],
+
+    headStyles: {
+      fillColor: [79, 70, 229],
+      halign: "center",
+    },
+
+    styles: {
+      fontSize: 11,
+      cellPadding: 4,
+      halign: "center",
+    },
+
     body: [
-      ["ATS Score", `${analysis.ats_score}%`],
-      ["Resume Quality", `${analysis.resume_quality}%`],
-      ["Job Match", `${analysis.job_match}%`],
+      [
+        "ATS Score",
+        `${analysis.ats_score}%`,
+      ],
+      [
+        "Resume Quality",
+        `${analysis.resume_quality}%`,
+      ],
+      [
+        "Job Match",
+        analysis.job_match == null
+          ? "N/A"
+          : `${analysis.job_match}%`,
+      ],
     ],
   });
 
-  let y = (doc as any).lastAutoTable.finalY + 10;
+  y = (doc as any).lastAutoTable.finalY + 12;
 
-  function addSection(title: string, items: string[]) {
-    doc.setFontSize(14);
+  // -------------------------
+  // Career Recommendation
+  // -------------------------
+
+  doc.setFontSize(18);
+  doc.setTextColor(79, 70, 229);
+
+  doc.text("Career Recommendation", 15, y);
+
+  y += 8;
+
+  doc.setFontSize(12);
+  doc.setTextColor(80);
+
+  doc.text("Best Career Match", 15, y);
+
+  y += 7;
+
+  doc.setFontSize(15);
+  doc.setTextColor(30);
+
+  doc.text(
+    analysis.target_role || "Not Available",
+    15,
+    y
+  );
+
+  y += 10;
+
+  if (
+    analysis.alternate_roles &&
+    analysis.alternate_roles.length > 0
+  ) {
+    doc.setFontSize(12);
+    doc.setTextColor(80);
+
+    doc.text("Alternative Career Paths", 15, y);
+
+    y += 7;
+
+    analysis.alternate_roles.forEach(
+      (role: string) => {
+        doc.setFillColor(238, 242, 255);
+
+        doc.roundedRect(
+          15,
+          y - 5,
+          55,
+          8,
+          2,
+          2,
+          "F"
+        );
+
+        doc.setFontSize(10);
+        doc.setTextColor(79, 70, 229);
+
+        doc.text(role, 18, y);
+
+        y += 10;
+      }
+    );
+  }
+
+  y += 6;
+
+  // -------------------------
+  // Helper Function
+  // -------------------------
+
+  function checkPageBreak(space = 20) {
+    if (y > pageHeight - space) {
+      doc.addPage();
+      y = 20;
+    }
+  }
+
+  function addSection(
+    title: string,
+    items: string[]
+  ) {
+    if (!items || items.length === 0) return;
+
+    checkPageBreak();
+
+    doc.setFontSize(17);
     doc.setTextColor(79, 70, 229);
-    doc.text(title, 14, y);
 
-    y += 6;
+    doc.text(title, 15, y);
+
+    y += 8;
 
     doc.setFontSize(11);
-    doc.setTextColor(0);
+    doc.setTextColor(40);
 
     items.forEach((item) => {
-      doc.text(`• ${item}`, 18, y);
-      y += 6;
+      checkPageBreak(25);
 
-      if (y > 270) {
-        doc.addPage();
-        y = 20;
-      }
+      const lines = doc.splitTextToSize(
+        "• " + item,
+        175
+      );
+
+      doc.text(lines, 20, y);
+
+      y += lines.length * 6 + 3;
     });
 
     y += 6;
   }
+    // -------------------------
+  // Resume Analysis Sections
+  // -------------------------
 
-  addSection("Strengths", analysis.strengths);
-  addSection("Weaknesses", analysis.weaknesses);
-  addSection("Missing Skills", analysis.missing_skills);
-  addSection("Missing Keywords", analysis.missing_keywords);
-  addSection("Suggestions", analysis.suggestions);
-  addSection("Interview Questions", analysis.interview_questions);
+  addSection("Strengths", analysis.strengths || []);
+  addSection("Weaknesses", analysis.weaknesses || []);
+  addSection("Missing Skills", analysis.missing_skills || []);
+  addSection("Missing Keywords", analysis.missing_keywords || []);
+  addSection("Suggestions", analysis.suggestions || []);
+  addSection(
+    "Interview Questions",
+    analysis.interview_questions || []
+  );
+
+  // -------------------------
+  // Footer
+  // -------------------------
+
+  const pages = doc.getNumberOfPages();
+
+  for (let i = 1; i <= pages; i++) {
+    doc.setPage(i);
+
+    doc.setDrawColor(230);
+
+    doc.line(
+      15,
+      pageHeight - 18,
+      pageWidth - 15,
+      pageHeight - 18
+    );
+
+    doc.setFontSize(9);
+    doc.setTextColor(120);
+
+    doc.text(
+      "Generated by KAIRO AI Resume Reviewer",
+      15,
+      pageHeight - 10
+    );
+
+    doc.text(
+      `Page ${i} of ${pages}`,
+      pageWidth - 15,
+      pageHeight - 10,
+      {
+        align: "right",
+      }
+    );
+  }
+
+  // -------------------------
+  // Save PDF
+  // -------------------------
 
   doc.save("KAIRO-Resume-Report.pdf");
 }
